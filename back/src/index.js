@@ -12,6 +12,32 @@ app.use(express.json());
 
 app.use("/api/peliculas", peliculasRoutes);
 
+//si no hay generos, crear algunos por defecto hardcodeados
+async function sembrarGeneros() {
+	try {
+		const cantidadGeneros = await prisma.genero.count();
+
+		if (cantidadGeneros === 0) {
+			console.log(
+				"--- La tabla de géneros está vacía. Creando géneros por defecto... ---",
+			);
+			await prisma.genero.createMany({
+				data: [
+					{ nombre: "Acción" },
+					{ nombre: "Ciencia Ficción" },
+					{ nombre: "Drama" },
+					{ nombre: "Comedia" },
+					{ nombre: "Terror" },
+				],
+			});
+			console.log("--- Géneros por defecto creados con éxito ---");
+		}
+	} catch (error) {
+		console.error("Error al verificar o crear géneros por defecto:", error);
+	}
+}
+sembrarGeneros();
+
 // Crear generos
 app.post("/api/generos", async (req, res) => {
 	const { nombre } = req.body;
