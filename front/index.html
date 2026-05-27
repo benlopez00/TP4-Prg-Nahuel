@@ -10,11 +10,21 @@
         <h1>Gestor de Películas</h1>
         
         <form id="form-pelicula">
+            <input type="hidden" id="pelicula-id">
+            
             <input type="text" id="titulo" placeholder="Título de la película" required>
-            <input type="number" id="año" placeholder="Año" required>
-            <input type="number" id="generoId" placeholder="ID del Género (ej: 1)" required>
-            <button type="submit">Agregar Película</button>
+            
+            <input type="number" id="año" placeholder="Año" min="1895" max="2026" required>
+            
+            <input type="number" id="generoId" placeholder="ID del Género (ej: 1)" min="1" required>
+            
+            <button type="submit" id="btn-submit">Agregar Película</button>
         </form>
+
+        <div style="margin-top: 20px;">
+            <input type="number" id="buscar-id" placeholder="Buscar por ID">
+            <button id="btn-buscar">Buscar Película</button>
+        </div>
 
         <ul id="lista-peliculas"></ul>
     </div>
