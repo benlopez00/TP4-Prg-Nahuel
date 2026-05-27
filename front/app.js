@@ -2,6 +2,19 @@ const API_URL = "http://localhost:3000/api/peliculas";
 const form = document.getElementById("form-pelicula");
 const lista = document.getElementById("lista-peliculas");
 
+let idEditando = null; // Variable que rastrea que película editamos
+
+// Funcion que llena el formulario
+function prepararEdicion(id, titulo, año, generoId) {
+    idEditando = id; // Guardamos el ID de la peli que estamos editando
+    document.getElementById("titulo").value = titulo;
+    document.getElementById("año").value = año;
+    document.getElementById("generoId").value = generoId;
+    
+    // Cambio texto del boton
+    document.getElementById("btn-submit").textContent = "Actualizar Película";
+}
+
 // Cargar películas al iniciar
 document.addEventListener("DOMContentLoaded", obtenerPeliculas);
 
@@ -17,6 +30,7 @@ async function obtenerPeliculas() {
 
 		li.innerHTML = `
 			<strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: <span class="badge">${nombreGenero}</span>
+			<button onclick="prepararEdicion(${pelicula.id}, '${pelicula.titulo}', ${pelicula.año}, ${pelicula.generoId})">Editar</button>
 			<button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
 		`;
 		lista.appendChild(li);
@@ -28,6 +42,10 @@ form.addEventListener("submit", async (e) => {
 	const titulo = document.getElementById("titulo").value;
 	const año = document.getElementById("año").value;
 	const generoId = document.getElementById("generoId").value;
+
+	// Alterna entre PUT y POST según si tiene id o no
+	const method = idEditando ? "PUT" : "POST";
+    const url = idEditando ? `${API_URL}/${idEditando}` : API_URL;
 
 	await fetch(API_URL, {
 		method: "POST",
