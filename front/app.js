@@ -12,10 +12,13 @@ async function obtenerPeliculas() {
 	lista.innerHTML = "";
 	peliculas.forEach((pelicula) => {
 		const li = document.createElement("li");
+
+		const nombreGenero = pelicula.genero?.nombre || "Indefinido";
+
 		li.innerHTML = `
-            <strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: ${pelicula.genero?.nombre || "N/A"}
-            <button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
-        `;
+			<strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: <span class="badge">${nombreGenero}</span>
+			<button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
+		`;
 		lista.appendChild(li);
 	});
 }
