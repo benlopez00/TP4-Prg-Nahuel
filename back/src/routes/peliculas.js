@@ -33,3 +33,36 @@ router.delete("/:id", async (req, res) => {
 });
 
 module.exports = router;
+
+
+//Editar película
+router.put("/:id", async (req, res) => {
+    const { id } = req.params;
+    const { titulo, año, generoId } = req.body;
+
+    try {
+        // Validar que la película exista antes de editar
+        const peliculaExistente = await prisma.pelicula.findUnique({
+            where: { id: parseInt(id) }
+        });
+
+        if (!peliculaExistente) {
+            return res.status(404).json({ error: "Película no encontrada" });
+        }
+
+        // Validar año 
+        if (parseInt(año) < 1895) {
+            return res.status(400).json({ error: "Año inválido" });
+        }
+
+        // Actualizar
+        const peliculaActualizada = await prisma.pelicula.update({
+            where: { id: parseInt(id) },
+            data: { titulo, año: parseInt(año), generoId: parseInt(generoId) },
+        });
+
+        res.json(peliculaActualizada);
+    } catch (error) {
+        res.status(400).json({ error: "Error al actualizar la película" });
+    }
+});
