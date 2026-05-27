@@ -23,11 +23,11 @@ async function sembrarGeneros() {
 			);
 			await prisma.genero.createMany({
 				data: [
-					{ nombre: "Acción" },
-					{ nombre: "Ciencia Ficción" },
-					{ nombre: "Drama" },
-					{ nombre: "Comedia" },
-					{ nombre: "Terror" },
+					{ id: 1, nombre: "Acción" },
+					{ id: 2, nombre: "Ciencia Ficción" },
+					{ id: 3, nombre: "Drama" },
+					{ id: 4, nombre: "Comedia" },
+					{ id: 5, nombre: "Terror" },
 				],
 			});
 			console.log("--- Géneros por defecto creados con éxito ---");
