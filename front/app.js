@@ -47,11 +47,11 @@ form.addEventListener("submit", async (e) => {
 	const method = idEditando ? "PUT" : "POST";
     const url = idEditando ? `${API_URL}/${idEditando}` : API_URL;
 
-	await fetch(API_URL, {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ titulo, año, generoId }),
-	});
+	await fetch(url, {
+        method: method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ titulo, año, generoId }),
+    });
 
 	form.reset();
 	obtenerPeliculas();
