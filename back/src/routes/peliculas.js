@@ -66,3 +66,25 @@ router.put("/:id", async (req, res) => {
         res.status(400).json({ error: "Error al actualizar la película" });
     }
 });
+
+//Barra de busqueda
+router.get("/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const pelicula = await prisma.pelicula.findUnique({
+            where: { id: parseInt(id) },
+            include: {
+                genero: true
+            }
+        });
+
+        if (!pelicula) {
+            return res.status(404).json({ error: "Película no encontrada" });
+        }
+
+        res.json(pelicula);
+    } catch (error) {
+        res.status(500).json({ error: "Error al obtener la película" });
+    }
+});

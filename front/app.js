@@ -62,6 +62,59 @@ async function eliminarPelicula(id) {
 	obtenerPeliculas();
 }
 
+//Codigo de busqueda de peliculas
+const barraDeBusqueda = document.getElementById('buscar-id');
+const btnDeBusqueda = document.getElementById('btn-buscar');
+const btnDeTodas = document.getElementById('btn-todas');
+
+
+btnDeBusqueda.addEventListener("click", () => {
+    bucarPeliculaId(barraDeBusqueda.value);
+});
+btnDeTodas.addEventListener("click", () => {
+    obtenerPeliculas();
+    barraDeBusqueda.value = "";
+});
+
+async function bucarPeliculaId(id) {
+    console.log(id);
+    
+    if (!id || id.trim() === "") {
+        alert("Error: El id no es valido.");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_URL}/${id}`);
+
+        if (res.status === 404) {
+            alert("Error: No se encontro la pelicula.");
+            return;
+        }
+        if (!res.ok) {
+            alert("Error: Hubo un error en el servidor.");
+            return;
+        }
+
+        const pelicula = await res.json();
+        lista.innerHTML = "";
+        const li = document.createElement("li");
+
+        const nombreGenero = pelicula.genero?.nombre || "Indefinido";
+
+        li.innerHTML = `
+            <strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: <span class="badge">${nombreGenero}</span>
+            <button onclick="prepararEdicion(${pelicula.id}, '${pelicula.titulo.replace(/'/g, "\\'")}', ${pelicula.año}, ${pelicula.generoId})">Editar</button>
+            <button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
+        `;
+        lista.appendChild(li);
+
+    } catch (error) {
+        alert("Error de red: No se pudo conectar con el servidor.");
+    }
+
+}
+
 
 // Codigo de validaciones 
 
