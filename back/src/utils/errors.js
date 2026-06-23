@@ -1,9 +1,9 @@
-// Clase base para nuestros errores controlados
+// Clase base
 class AppError extends Error {
 	constructor(message, statusCode) {
 		super(message);
 		this.statusCode = statusCode;
-		this.isOperational = true; // Identifica que es un error previsto por nosotros
+		this.isOperational = true;
 		Error.captureStackTrace(this, this.constructor);
 	}
 }
