@@ -14,9 +14,43 @@ model Genero {
 }
 
 model Pelicula {
-  id       Int    @id @default(autoincrement())
-  titulo   String
-  año      Int
-  generoId Int
-  genero   Genero @relation(fields: [generoId], references: [id])
+  id            Int             @id @default(autoincrement())
+  titulo        String
+  año           Int
+  generoId      Int
+  genero        Genero          @relation(fields: [generoId], references: [id])
+  watchlistItems WatchlistItem[] // tabla intermedia
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Usuario {
+  id         Int         @id @default(autoincrement())
+  email      String      @unique
+  password   String
+  role       Role        @default(USER)
+  watchlists Watchlist[] // 1:N
+}
+
+model Watchlist {
+  id        Int             @id @default(autoincrement())
+  nombre    String          @default("Mi Lista")
+  userId    Int
+  usuario   Usuario         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WatchlistItem[] // 1:N 
+}
+
+//Tabla Intermedia Watchlist y Pelicula
+model WatchlistItem {
+  id          Int       @id @default(autoincrement())
+  watchlistId Int
+  movieId     Int
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+  pelicula    Pelicula  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  // Evita q se duplique la misma película
+  @@unique([watchlistId, movieId]) 
 }

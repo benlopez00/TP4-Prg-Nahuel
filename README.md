@@ -1,228 +1,68 @@
-# Trabajo Práctico — Sprint 1
-## CRUD Fullstack con Node.js, Express, Prisma y MySQL
+# 🎬 Sistema de Gestión de Películas y Favoritos (CRUD Fullstack)
+
+## 📝 Descripción del Sistema
+
+Este es un sistema de gestión cinematográfica construido como una aplicación web fullstack SPA (Single Page Application). Permite la administración de películas estructuradas por géneros e incorpora un sistema completo de autenticación y autorización basado en roles (RBAC).
+
+Los usuarios con rol `ADMIN` pueden realizar operaciones CRUD completas sobre el catálogo, mientras que los usuarios con rol `USER` pueden explorar los títulos y gestionar su propia lista personalizada de favoritos (*Watchlist*).
+
+### Tecnologías utilizadas
+
+- **Backend:** Node.js, Express, Prisma ORM, MySQL.
+- **Seguridad:** Hasheo con bcrypt, autenticación mediante JWT y control de acceso RBAC.
+- **Validaciones y Errores:** express-validator y middleware centralizado de excepciones.
+- **Frontend:** HTML5, CSS3 y JavaScript Vanilla (sin frameworks externos).
 
 ---
 
-# Objetivo
+## 🚀 Instrucciones de Instalación y Ejecución
 
-Desarrollar un sistema de gestión simple tipo CRUD utilizando:
+### 1. Configuración del Servidor (Backend)
 
-- Node.js
-- Express
-- Prisma ORM
-- MySQL
-- HTML
-- CSS
-- JavaScript Vanilla
+1. Navega a la carpeta del servidor:
 
-El objetivo de este sprint es construir una primera versión funcional del sistema con frontend y backend conectados entre sí.
+   ```bash
+   cd backend
+   ```
 
----
+2. Instala las dependencias:
 
-# Temática del sistema
+   ```bash
+   npm install
+   ```
 
-La temática es libre.
+3. Crea un archivo `.env` en la raíz de la carpeta `backend` y define tus variables de conexión a la base de datos y la clave secreta de seguridad:
 
-Ejemplos:
+   ```env
+   DATABASE_URL="mysql://tu_usuario:tu_contraseña@localhost:3306/peliculas_db"
+   JWT_SECRET="clave_secreta_para_tokens_jwt"
+   ```
 
-- Gestión de alumnos
-- Gestión de productos
-- Gestión de películas
-- Gestión de mascotas
-- Gestión de tareas
-- Gestión de libros
-- Gestión de turnos
+4. Genera el historial de migraciones oficiales y sincroniza tu base de datos local de MySQL:
 
-El sistema debe representar una entidad real y tener sentido como aplicación de gestión.
+   ```bash
+   npx prisma migrate dev --name init
+   ```
 
----
+5. Inicia el servidor en modo desarrollo:
 
-# Requisitos del Backend
+   ```bash
+   npm run dev
+   ```
 
-## Tecnologías obligatorias
+   El backend quedará escuchando en:
 
-- Node.js
-- Express
-- Prisma
-- MySQL
+   ```
+   http://localhost:3000
+   ```
 
 ---
 
-## API REST
+### 2. Ejecución de la Interfaz (Frontend)
 
-El backend debe exponer endpoints funcionales para realizar operaciones CRUD.
+1. Dirígete a la carpeta `frontend/`.
 
-Como mínimo debe incluir:
+2. Abre el archivo `index.html` en tu navegador web de preferencia:
 
-```http
-GET /recurso
-GET /recurso/:id
-POST /recurso
-PUT /recurso/:id
-DELETE /recurso/:id
-```
-
-Ejemplo:
-
-```http
-GET /productos
-POST /productos
-PUT /productos/:id
-DELETE /productos/:id
-```
-
----
-
-## Base de Datos
-
-Debe incluir:
-
-- Modelo Prisma correctamente definido
-- Migraciones funcionales
-- Conexión a MySQL
-
----
-
-## Validaciones básicas
-
-El sistema debe validar al menos:
-
-- Campos obligatorios
-- Strings vacíos
-- Valores inválidos
-- IDs inexistentes
-
-No es obligatorio utilizar librerías externas de validación.
-
----
-
-# Requisitos del Frontend
-
-## Tecnologías obligatorias
-
-- HTML
-- CSS
-- JavaScript Vanilla
-
-No se permite utilizar frameworks frontend.
-
-Ejemplos NO permitidos:
-
-- React
-- Vue
-- Angular
-- Next.js
-
----
-
-## Funcionalidades mínimas
-
-### 1. Listado de datos
-
-Mostrar registros obtenidos desde el backend utilizando `fetch`.
-
----
-
-### 2. Alta de registros
-
-Crear nuevos registros desde la interfaz web.
-
----
-
-### 3. Eliminación de registros
-
-Permitir borrar registros desde la interfaz.
-
----
-
-### 4. Edición de registros
-
-Permitir editar al menos un campo de un registro existente.
-
----
-
-# Estructura mínima sugerida
-
-```txt
-/backend
-/frontend
-```
-
-Ejemplo backend:
-
-```txt
-backend/
-└── src/
-    ├── routes/
-    ├── prisma/
-    └── index.js
-```
-
----
-
-# Entregable
-
-## Deben entregar:
-
-### 1. Código fuente
-
-Repositorio GitHub o archivo comprimido `.zip`.
-
----
-
-### 2. README.md
-
-Debe incluir:
-
-- Nombre del proyecto
-- Tecnologías utilizadas
-- Instrucciones de instalación
-- Instrucciones de ejecución
-- Descripción breve del sistema
-
----
-
-### 3. Base de datos
-
-Debe incluir:
-
-- `schema.prisma`
-- migraciones
-
----
-
-### 4. Video demostrativo (Opcional)
-
-Video corto de 2 a 5 minutos mostrando:
-
-- Funcionamiento del CRUD
-- Base de datos
-- Estructura del proyecto
-
----
-
-# Criterios de evaluación
-
-| Criterio | Puntaje |
-|---|---|
-| Backend funcional | 30 |
-| Prisma + MySQL | 20 |
-| Frontend conectado | 25 |
-| CRUD completo | 15 |
-| Organización y claridad del proyecto | 10 |
-
----
-
-# Restricciones
-
-## No está permitido:
-
-- Utilizar frameworks frontend
-- Copiar proyectos completos de internet
-- Entregar código que no puedan explicar
-
----
-
-# Fecha de entrega
-
-21 de Mayo
+   - Haciendo doble clic sobre el archivo.
+   - Utilizando la extensión **Live Server** de VS Code.
