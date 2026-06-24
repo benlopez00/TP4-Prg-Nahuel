@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const peliculasRoutes = require("./routes/peliculas");
 const { PrismaClient } = require("@prisma/client");
+const authRoutes = require("./routes/auth");
+const watchlistRoutes = require("./routes/watchlist");
+const errorHandler = require("./middlewares/errorHandler");
 
 const app = express();
 const prisma = new PrismaClient();
@@ -9,9 +12,14 @@ const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
-
+app.use("/api/auth", authRoutes);
 app.use("/api/peliculas", peliculasRoutes);
+app.use("/api/watchlist", watchlistRoutes);
+app.use(errorHandler);
 
+app.listen(PORT, () => {
+	console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});
 //si no hay generos, crear algunos por defecto hardcodeados
 async function sembrarGeneros() {
 	try {

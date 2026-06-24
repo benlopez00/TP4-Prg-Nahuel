@@ -1,158 +1,267 @@
 const API_URL = "http://localhost:3000/api/peliculas";
+const AUTH_URL = "http://localhost:3000/api/auth";
+const WATCHLIST_URL = "http://localhost:3000/api/watchlist";
+
 const form = document.getElementById("form-pelicula");
 const lista = document.getElementById("lista-peliculas");
+const listaWatchlist = document.getElementById("lista-watchlist");
+let usuarioActual = null; // Guardará los datos del usuario logueado
 
-let idEditando = null; // Variable que rastrea que película editamos
+// --- INICIALIZACIÓN ---
+document.addEventListener("DOMContentLoaded", () => {
+	verificarSesion();
+	obtenerPeliculas();
+});
 
-// Funcion que llena el formulario
-function prepararEdicion(id, titulo, año, generoId) {
-    idEditando = id; // Guardamos el ID de la peli que estamos editando
-    document.getElementById("titulo").value = titulo;
-    document.getElementById("año").value = año;
-    document.getElementById("generoId").value = generoId;
-    
-    // Cambio texto del boton
-    document.getElementById("btn-submit").textContent = "Actualizar Película";
+// --- AUTENTICACIÓN Y SESIÓN ---
+async function verificarSesion() {
+	const token = localStorage.getItem("token");
+	if (!token) return;
+
+	try {
+		const res = await fetch(`${AUTH_URL}/me`, {
+			headers: { Authorization: `Bearer ${token}` },
+		});
+		if (res.ok) {
+			usuarioActual = await res.json();
+			document.getElementById("auth-message").innerText =
+				`Logueado como ${usuarioActual.email} (${usuarioActual.role})`;
+			document.getElementById("btn-logout").style.display =
+				"inline-block";
+			document.getElementById("watchlist-section").style.display =
+				"block";
+
+			// Ocultar formulario de creación si no es ADMIN
+			if (usuarioActual.role !== "ADMIN") {
+				form.style.display = "none";
+			} else {
+				form.style.display = "block";
+			}
+
+			obtenerWatchlist();
+		} else {
+			logout(); // Si el token expiró, cerramos sesión
+		}
+	} catch (error) {
+		console.error("Error al verificar sesión", error);
+	}
 }
 
-// Cargar películas al iniciar
-document.addEventListener("DOMContentLoaded", obtenerPeliculas);
+async function register() {
+	const email = document.getElementById("email").value;
+	const password = document.getElementById("password").value;
+	const role = document.getElementById("role-select").value;
 
+	const res = await fetch(`${AUTH_URL}/register`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email, password, role }),
+	});
+	const data = await res.json();
+	document.getElementById("auth-message").innerText =
+		data.message || data.error;
+}
+
+async function login() {
+	const email = document.getElementById("email").value;
+	const password = document.getElementById("password").value;
+
+	const res = await fetch(`${AUTH_URL}/login`, {
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({ email, password }),
+	});
+	const data = await res.json();
+
+	if (res.ok) {
+		localStorage.setItem("token", data.token);
+		verificarSesion(); // Carga el perfil y ajusta la UI
+		obtenerPeliculas();
+	} else {
+		document.getElementById("auth-message").innerText = data.error;
+	}
+}
+
+function logout() {
+	localStorage.removeItem("token");
+	usuarioActual = null;
+	document.getElementById("auth-message").innerText = "Sesión cerrada";
+	document.getElementById("btn-logout").style.display = "none";
+	document.getElementById("watchlist-section").style.display = "none";
+	form.style.display = "block"; // Mostrar formulario por defecto
+	listaWatchlist.innerHTML = "";
+	obtenerPeliculas(); // Refrescar lista sin botones especiales
+}
+
+// --- GESTIÓN DE PELÍCULAS (CRUD) ---
 async function obtenerPeliculas() {
 	const res = await fetch(API_URL);
 	const peliculas = await res.json();
+	renderizarPeliculas(peliculas);
+}
 
+function renderizarPeliculas(peliculas) {
 	lista.innerHTML = "";
-	peliculas.forEach((pelicula) => {
-		const li = document.createElement("li");
+	// Si viene un solo objeto (por la búsqueda), lo convertimos en array
+	const data = Array.isArray(peliculas) ? peliculas : [peliculas];
 
+	data.forEach((pelicula) => {
 		const nombreGenero = pelicula.genero?.nombre || "Indefinido";
+		const li = document.createElement("li");
+		li.innerHTML = `<strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: ${nombreGenero} (ID: ${pelicula.id})`;
 
-		li.innerHTML = `
-			<strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: <span class="badge">${nombreGenero}</span>
-			<button onclick="prepararEdicion(${pelicula.id}, '${pelicula.titulo}', ${pelicula.año}, ${pelicula.generoId})">Editar</button>
-			<button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
-		`;
+		// Botones según el rol
+		if (usuarioActual) {
+			// Todos los logueados pueden agregar a favoritos
+			li.innerHTML += ` <button onclick="agregarAWatchlist(${pelicula.id})">⭐ Favorito</button>`;
+
+			// Solo ADMIN puede editar y eliminar
+			if (usuarioActual.role === "ADMIN") {
+				li.innerHTML += `
+                    <button onclick="cargarEdicion(${pelicula.id}, '${pelicula.titulo}', ${pelicula.año}, ${pelicula.generoId})">Editar</button>
+                    <button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
+                `;
+			}
+		}
 		lista.appendChild(li);
 	});
 }
 
+// Lógica combinada para CREAR o EDITAR
 form.addEventListener("submit", async (e) => {
 	e.preventDefault();
+	const id = document.getElementById("pelicula-id").value;
 	const titulo = document.getElementById("titulo").value;
 	const año = document.getElementById("año").value;
 	const generoId = document.getElementById("generoId").value;
+	const token = localStorage.getItem("token");
 
-	// Alterna entre PUT y POST según si tiene id o no
-	const method = idEditando ? "PUT" : "POST";
-    const url = idEditando ? `${API_URL}/${idEditando}` : API_URL;
+	const method = id ? "PUT" : "POST"; // Si hay ID, actualiza. Si no, crea.
+	const url = id ? `${API_URL}/${id}` : API_URL;
 
-	await fetch(url, {
-        method: method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ titulo, año, generoId }),
-    });
+	const res = await fetch(url, {
+		method: method,
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify({ titulo, año, generoId }),
+	});
 
-	form.reset();
-	obtenerPeliculas();
+	const data = await res.json();
+	if (!res.ok) {
+		alert("Error: " + (data.error || "No autorizado"));
+	} else {
+		form.reset();
+		document.getElementById("pelicula-id").value = "";
+		document.getElementById("btn-submit").innerText = "Agregar Película";
+		obtenerPeliculas();
+	}
 });
+
+function cargarEdicion(id, titulo, año, generoId) {
+	document.getElementById("pelicula-id").value = id;
+	document.getElementById("titulo").value = titulo;
+	document.getElementById("año").value = año;
+	document.getElementById("generoId").value = generoId;
+	document.getElementById("btn-submit").innerText = "Guardar Cambios";
+	window.scrollTo(0, 0);
+}
 
 async function eliminarPelicula(id) {
-	await fetch(`${API_URL}/${id}`, { method: "DELETE" });
-	obtenerPeliculas();
+	if (!confirm("¿Seguro que deseas eliminar esta película?")) return;
+	const token = localStorage.getItem("token");
+	const res = await fetch(`${API_URL}/${id}`, {
+		method: "DELETE",
+		headers: { Authorization: `Bearer ${token}` },
+	});
+
+	if (res.ok) {
+		obtenerPeliculas();
+		if (usuarioActual) obtenerWatchlist(); // Refrescar watchlist por si estaba ahí
+	} else {
+		const data = await res.json();
+		alert(data.error);
+	}
 }
 
-//Codigo de busqueda de peliculas
-const barraDeBusqueda = document.getElementById('buscar-id');
-const btnDeBusqueda = document.getElementById('btn-buscar');
-const btnDeTodas = document.getElementById('btn-todas');
-
-
-btnDeBusqueda.addEventListener("click", () => {
-    bucarPeliculaId(barraDeBusqueda.value);
+// --- BÚSQUEDA ---
+document.getElementById("btn-buscar").addEventListener("click", async () => {
+	const id = document.getElementById("buscar-id").value;
+	if (!id) return;
+	const res = await fetch(`${API_URL}/${id}`);
+	if (res.ok) {
+		const pelicula = await res.json();
+		renderizarPeliculas(pelicula);
+	} else {
+		alert("Película no encontrada");
+	}
 });
-btnDeTodas.addEventListener("click", () => {
-    obtenerPeliculas();
-    barraDeBusqueda.value = "";
-});
 
-async function bucarPeliculaId(id) {
-    console.log(id);
-    
-    if (!id || id.trim() === "") {
-        alert("Error: El id no es valido.");
-        return;
-    }
+document
+	.getElementById("btn-todas")
+	.addEventListener("click", obtenerPeliculas);
 
-    try {
-        const res = await fetch(`${API_URL}/${id}`);
+// --- WATCHLIST (FAVORITOS) ---
+async function obtenerWatchlist() {
+	const token = localStorage.getItem("token");
+	if (!token) return;
 
-        if (res.status === 404) {
-            alert("Error: No se encontro la pelicula.");
-            return;
-        }
-        if (!res.ok) {
-            alert("Error: Hubo un error en el servidor.");
-            return;
-        }
+	const res = await fetch(WATCHLIST_URL, {
+		headers: { Authorization: `Bearer ${token}` },
+	});
 
-        const pelicula = await res.json();
-        lista.innerHTML = "";
-        const li = document.createElement("li");
+	if (res.ok) {
+		const watchlist = await res.json();
+		listaWatchlist.innerHTML = "";
 
-        const nombreGenero = pelicula.genero?.nombre || "Indefinido";
+		if (watchlist.items.length === 0) {
+			listaWatchlist.innerHTML = "<li>Tu lista está vacía</li>";
+			return;
+		}
 
-        li.innerHTML = `
-            <strong>${pelicula.titulo}</strong> (${pelicula.año}) - Género: <span class="badge">${nombreGenero}</span>
-            <button onclick="prepararEdicion(${pelicula.id}, '${pelicula.titulo.replace(/'/g, "\\'")}', ${pelicula.año}, ${pelicula.generoId})">Editar</button>
-            <button onclick="eliminarPelicula(${pelicula.id})">Eliminar</button>
-        `;
-        lista.appendChild(li);
-
-    } catch (error) {
-        alert("Error de red: No se pudo conectar con el servidor.");
-    }
-
+		watchlist.items.forEach((item) => {
+			const peli = item.pelicula;
+			const li = document.createElement("li");
+			li.innerHTML = `
+                <strong>${peli.titulo}</strong> (${peli.año})
+                <button onclick="eliminarDeWatchlist(${peli.id})">❌ Quitar</button>
+            `;
+			listaWatchlist.appendChild(li);
+		});
+	}
 }
 
+async function agregarAWatchlist(movieId) {
+	const token = localStorage.getItem("token");
+	const res = await fetch(WATCHLIST_URL, {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			Authorization: `Bearer ${token}`,
+		},
+		body: JSON.stringify({ movieId }),
+	});
 
-// Codigo de validaciones 
-
-
-//Validación manual extra para el POST/PUT (evita trampas con la barra espaciadora)
-function sonDatosValidos(titulo, anio) {
-	if (titulo.trim() === "") {
-		alert("Error: El título no puede estar vacío ni tener solo espacios.")
-		return false;
+	const data = await res.json();
+	if (res.ok) {
+		obtenerWatchlist();
+	} else {
+		alert(data.error);
 	}
-	if (isNaN(anio) || anio < 1895 || anio > 2026) {
-		alert("Error: El año debe ser un número entre 1895 y 2026.")
-		return false;
-	}
-	return true;
 }
 
-//Validacion deL GET por id (buscador) verifica que exista o tira 404
+async function eliminarDeWatchlist(movieId) {
+	const token = localStorage.getItem("token");
+	const res = await fetch(`${WATCHLIST_URL}/${movieId}`, {
+		method: "DELETE",
+		headers: { Authorization: `Bearer ${token}` },
+	});
 
-async function buscarValidarPelicula(id) {
-	const res = await fetch('http://localhost:3000/api/peliculas/${id}')
-
-	if (res.status === 404) {
-		alert('Error 404: La película con ID ${id} no existe en la base de datos.')
-		return null
+	if (res.ok) {
+		obtenerWatchlist();
+	} else {
+		const data = await res.json();
+		alert(data.error);
 	}
-	return await res.json()
 }
-
-// Validacion de existencia antes de editar PUT
-
-async function validarPeliculaParaEditar(id) {
-	const res = await fetch('http://localhost:3000/api/peliculas/${id}')
-
-	if (res.status === 404) {
-		alert('Error 404: No se puede editar la película con ID ${id} porque no existe.')
-		return false
-	}
-	return true
-}
-

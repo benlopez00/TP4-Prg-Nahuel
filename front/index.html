@@ -7,6 +7,22 @@
 </head>
 <body>
     <div class="container">
+        <div id="auth-section">
+    <h2>Login / Registro</h2>
+    <form id="form-auth">
+        <input type="email" id="email" placeholder="Correo electrónico" required>
+        <input type="password" id="password" placeholder="Contraseña" required>
+        <select id="role-select">
+            <option value="USER">Usuario Normal</option>
+            <option value="ADMIN">Administrador</option>
+        </select>
+        <button type="button" onclick="login()">Iniciar Sesión</button>
+        <button type="button" onclick="register()">Registrarse</button>
+    </form>
+    <p id="auth-message"></p>
+    <button id="btn-logout" style="display: none;" onclick="logout()">Cerrar Sesión</button>
+</div>
+<hr>
         <h1>Gestor de Películas</h1>
         
         <form id="form-pelicula">
@@ -28,6 +44,11 @@
         </div>
 
         <ul id="lista-peliculas"></ul>
+        <hr>
+        <div id="watchlist-section" style="display: none;">
+            <h2>Mi Lista de Favoritos 🍿</h2>
+            <ul id="lista-watchlist"></ul>
+        </div>
     </div>
 
     <script src="app.js"></script>
